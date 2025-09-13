@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Query;
-using MVC___ProjectE__.Data;
-using MVC___ProjectE__.Models;
+using Bulky.DataAccess.Data;
+using Bulky.Models;
 using MVC___ProjectE__.Repository;
 using System.Diagnostics;
 
@@ -11,16 +11,17 @@ namespace MVC___ProjectE__.Controllers
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
-        private readonly ICategoryRepo CateRepo;
 		private readonly AppDbContext context;
 
-		public HomeController(ILogger<HomeController> logger, ICategoryRepo CateRepo, AppDbContext context)
+		public HomeController(ILogger<HomeController> logger, AppDbContext context)
         {
             _logger = logger;
-            this.CateRepo = CateRepo;
 			this.context = context;
 		}
-
+        public IActionResult Index()
+        {
+            return View();
+        }
         public IActionResult Privacy()
         {
             return View();
