@@ -1,5 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using MVC___ProjectE__.Data;
+using Bulky.DataAccess.Data;
 using MVC___ProjectE__.Repository.Repository;
 using System.Linq.Expressions;
 

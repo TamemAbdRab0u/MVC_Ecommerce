@@ -21,12 +21,6 @@ namespace MVC___ProjectE__.Controllers
 			this.context = context;
 		}
 
-        public IActionResult Index()
-        {
-			IEnumerable<Product> ProductList = context.Products.Include(x => x.Category).ToList();
-			return View(ProductList);
-		}
-
         public IActionResult Privacy()
         {
             return View();
