@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Bulky.DataAccess.Data;
+using Bulky.DataAccess.Repository.IRepository;
+using Bulky.DataAccess.Repository.Repository;
 
 namespace MVC___ProjectE__
 {
@@ -16,7 +18,7 @@ namespace MVC___ProjectE__
                 options.UseSqlServer(builder.Configuration.GetConnectionString("constr"));
             });
 
-            //builder.Services.AddScoped<ICategoryRepo, CategoryRepo>();
+            builder.Services.AddScoped<ICategoryRepo, CategoryRepo>();
 
 
             var app = builder.Build();

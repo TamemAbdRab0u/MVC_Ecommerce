@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Query;
 using Bulky.DataAccess.Data;
 using Bulky.Models;
-using MVC___ProjectE__.Repository;
+using Bulky.DataAccess.Repository.IRepository;
 using System.Diagnostics;
 
 namespace MVC___ProjectE__.Controllers
