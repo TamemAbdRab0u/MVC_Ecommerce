@@ -2,7 +2,7 @@
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace MVC___ProjectE__.Models
+namespace Bulky.Models
 {
     public class Product
     {

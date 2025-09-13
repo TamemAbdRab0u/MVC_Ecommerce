@@ -1,21 +1,20 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using MVC___ProjectE__.Data;
-using MVC___ProjectE__.Models;
-using MVC___ProjectE__.Repository;
+using Bulky.DataAccess.Data;
+using Bulky.Models;
 
 namespace MVC___ProjectE__.Controllers
 {
     public class CategoryController : Controller
     {
-        public ICategoryRepo CatRepo;
-        public CategoryController(ICategoryRepo CatRepo)
+        AppDbContext context;
+        public CategoryController(AppDbContext context)
         {
-            this.CatRepo = CatRepo;
+            this.context = context;
         }
 
         public IActionResult Index()
         {
-            List<Category> CategoryList = CatRepo.GetAll().ToList();
+            List<Category> CategoryList = context.Categories.ToList();
             return View(CategoryList);
         }
 
@@ -30,8 +29,8 @@ namespace MVC___ProjectE__.Controllers
 		{
 			if (ModelState.IsValid)
 			{
-				CatRepo.Add(category);
-                CatRepo.Save();
+				context.Categories.Add(category);
+                context.SaveChanges();
 				TempData["success"] = "Category Added Successfully";
 				return RedirectToAction("Index");
 			}
@@ -40,7 +39,7 @@ namespace MVC___ProjectE__.Controllers
 
         public IActionResult Edit(int Id)
         {
-			Category cat =CatRepo.GetById(x => x.Id == Id);
+			Category cat =context.Categories.FirstOrDefault(x => x.Id == Id);
 			return View("Edit",cat);
         }
 
@@ -49,8 +48,8 @@ namespace MVC___ProjectE__.Controllers
         {
             if (ModelState.IsValid)
             {
-                CatRepo.Update(category);
-                CatRepo.Save();
+                context.Categories.Update(category);
+                context.SaveChanges();
 				TempData["success"] = "Category Updated Successfully";
 				return RedirectToAction("Index");
 			}
@@ -59,16 +58,16 @@ namespace MVC___ProjectE__.Controllers
 
 		public IActionResult Delete(int Id)
 		{
-			Category category = CatRepo.GetById(x => x.Id == Id);
+			Category category = context.Categories.FirstOrDefault(x => x.Id == Id);
 			return View("Delete", category);
 		}
 
 		[HttpPost]
 		public IActionResult SaveDelete(int Id)
 		{
-				Category category = CatRepo.GetById(x => x.Id == Id);
-				CatRepo.Remove(category);
-				CatRepo.Save();
+            Category category = context.Categories.FirstOrDefault(x => x.Id == Id);
+                context.Categories.Remove(category);
+				context.SaveChanges();
                 TempData["success"] = "Category Deleted Successfully";         //  If We Need To Display Notifications
                 return RedirectToAction("Index");
 		}

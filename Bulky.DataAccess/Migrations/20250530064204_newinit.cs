@@ -2,7 +2,7 @@
 
 #nullable disable
 
-namespace MVC___ProjectE__.Migrations
+namespace Bulky.DataAccess.Migrations
 {
     /// <inheritdoc />
     public partial class newinit : Migration
