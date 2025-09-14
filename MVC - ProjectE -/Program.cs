@@ -18,7 +18,7 @@ namespace MVC___ProjectE__
                 options.UseSqlServer(builder.Configuration.GetConnectionString("constr"));
             });
 
-            builder.Services.AddScoped<ICategoryRepo, CategoryRepo>();
+            builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 
             var app = builder.Build();

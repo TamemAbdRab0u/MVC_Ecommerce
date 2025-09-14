@@ -8,24 +8,24 @@ namespace MVC___ProjectE__.Controllers
     public class CategoryController : Controller
     {
         private readonly AppDbContext context;
-        private readonly ICategoryRepo CateRepo;
-        public CategoryController(AppDbContext context, ICategoryRepo CateRepo)
+        private readonly IUnitOfWork unitofwork;
+        public CategoryController(AppDbContext context, IUnitOfWork unitofwork)
         {
             this.context = context;
-            this.CateRepo = CateRepo;
+            this.unitofwork = unitofwork;
         }
 
         [HttpGet]
         public IActionResult Index()
         {
-            List<Category> CategoryList = CateRepo.GetAll().ToList();
+            List<Category> CategoryList = unitofwork.Category.GetAll().ToList();
             return View(CategoryList);
         }
 
         [HttpGet]
         public IActionResult Details(int Id)
         {
-            Category category = CateRepo.Get(x => x.Id == Id);
+            Category category = unitofwork.Category.Get(x => x.Id == Id);
             return View(category);
         }
 
@@ -40,8 +40,8 @@ namespace MVC___ProjectE__.Controllers
 		{
 			if (ModelState.IsValid)
 			{
-				CateRepo.Add(category);
-                CateRepo.Save();
+				unitofwork.Category.Add(category);
+                unitofwork.Save();
 				TempData["success"] = "Category Added Successfully";
 				return RedirectToAction("Index");
 			}
@@ -52,7 +52,7 @@ namespace MVC___ProjectE__.Controllers
         [HttpGet]
         public IActionResult Edit(int Id)
         {
-			Category category = CateRepo.Get(x => x.Id == Id);
+			Category category = unitofwork.Category.Get(x => x.Id == Id);
 			return View("Edit",category);
         }
         [HttpPost]
@@ -60,8 +60,8 @@ namespace MVC___ProjectE__.Controllers
         {
             if (ModelState.IsValid)
             {
-                CateRepo.Update(category);
-                CateRepo.Save();
+                unitofwork.Category.Update(category);
+                unitofwork.Save();
 				TempData["success"] = "Category Updated Successfully";
 				return RedirectToAction("Index");
 			}
@@ -72,15 +72,15 @@ namespace MVC___ProjectE__.Controllers
         [HttpGet]
 		public IActionResult Delete(int Id)
 		{
-			Category category = CateRepo.Get(x => x.Id == Id);
+			Category category = unitofwork.Category.Get(x => x.Id == Id);
             return View("Delete", category);
 		}
 		[HttpPost]
 		public IActionResult SaveDelete(int Id)
 		{
-            Category category = CateRepo.Get(x => x.Id == Id);
-            CateRepo.Remove(category);
-		    CateRepo.Save();
+            Category category = unitofwork.Category.Get(x => x.Id == Id);
+            unitofwork.Category.Remove(category);
+		    unitofwork.Save();
             TempData["success"] = "Category Deleted Successfully";         //  If We Need To Display Notifications
             return RedirectToAction("Index");
 		}
