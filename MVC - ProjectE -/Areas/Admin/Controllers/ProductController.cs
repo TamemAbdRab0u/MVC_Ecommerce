@@ -27,12 +27,12 @@ namespace MVC___ProjectE__.Areas.Admin.Controllers
             return View(product);
         }
 
+
         [HttpGet]
         public IActionResult Create()
         {
             return View();
         }
-
         [HttpPost]
         public IActionResult Create(Product product)
         {
@@ -46,13 +46,13 @@ namespace MVC___ProjectE__.Areas.Admin.Controllers
             return View("Create", product);
         }
 
+
         [HttpGet]
         public IActionResult Edit(int Id)
         {
             Product product = unitofwork.Product.Get(x => x.Id == Id);
             return View(product);
         }
-
         [HttpPost]
         public IActionResult Edit(Product product)
         {
@@ -66,13 +66,13 @@ namespace MVC___ProjectE__.Areas.Admin.Controllers
             return View("Edit", product);
         }
 
+
         [HttpGet]
         public IActionResult Delete(int Id)
         {
             Product product = unitofwork.Product.Get(x => x.Id == Id);
             return View(product);
         }
-
         [HttpPost]
         public IActionResult ConfirmDelete(int Id)
         {
