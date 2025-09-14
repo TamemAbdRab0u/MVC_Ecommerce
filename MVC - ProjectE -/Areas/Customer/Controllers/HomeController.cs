@@ -6,8 +6,9 @@ using Bulky.Models;
 using Bulky.DataAccess.Repository.IRepository;
 using System.Diagnostics;
 
-namespace MVC___ProjectE__.Controllers
+namespace MVC___ProjectE__.Areas.Customer.Controllers
 {
+    [Area("Customer")]
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;

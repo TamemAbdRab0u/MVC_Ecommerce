@@ -3,8 +3,9 @@ using Bulky.DataAccess.Data;
 using Bulky.Models;
 using Bulky.DataAccess.Repository.IRepository;
 
-namespace MVC___ProjectE__.Controllers
+namespace MVC___ProjectE__.Areas.Admin.Controllers
 {
+    [Area("Admin")]
     public class CategoryController : Controller
     {
         private readonly AppDbContext context;
