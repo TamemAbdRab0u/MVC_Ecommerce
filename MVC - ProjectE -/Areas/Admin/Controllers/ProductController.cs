@@ -29,6 +29,50 @@ namespace MVC___ProjectE__.Areas.Admin.Controllers
             return View(product);
         }
 
+        [HttpGet]
+        public IActionResult Upsert(int? Id)
+        {
+            ProductVM productVM = new()
+            {
+                Product = new Product(),
+                CategoryList = unitofwork.Category.GetAll().Select(x => new SelectListItem
+                {
+                    Text = x.Name,
+                    Value = x.Id.ToString()
+                })
+            };
+
+            if (Id == null || Id == 0)  // Create
+            {
+                return View(productVM);
+            }
+            else                        // Update
+            {
+                productVM.Product = unitofwork.Product.Get(x => x.Id == Id);
+                return View(productVM);
+            }
+        }
+
+        [HttpPost]
+        public IActionResult Upsert(ProductVM productVM, IFormFile? file)
+        {
+            if (ModelState.IsValid)
+            {
+                unitofwork.Product.Add(productVM.Product);
+                unitofwork.Save();
+                TempData["success"] = "Product Added Successfully";
+                return RedirectToAction("Index");
+            }
+
+            productVM.CategoryList = unitofwork.Category.GetAll().Select(x => new SelectListItem
+            {
+                Text = x.Name,
+                Value = x.Id.ToString()
+            });
+            return View(productVM);
+
+        }
+
 
         [HttpGet]
         public IActionResult Create()
