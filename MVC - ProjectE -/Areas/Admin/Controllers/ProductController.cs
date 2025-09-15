@@ -106,6 +106,31 @@ namespace MVC___ProjectE__.Areas.Admin.Controllers
 
         }
 
-        
+        #region ApiCalls
+        public IActionResult GetAll()
+        {
+            List<Product> products = unitofwork.Product.GetAll(includeProperties: "Category").ToList();
+            return Json (new { data = products });
+        }
+
+        [HttpDelete]
+        public IActionResult Delete(int Id)
+        {
+            var product = unitofwork.Product.Get(x => x.Id == Id);
+            if (product == null)
+            {
+                return Json(new { success = false, message = "Error while Deleting" });
+            }
+            var oldImagePath = Path.Combine(hostEnvironment.WebRootPath, product.ImageUrl.TrimStart('\\'));
+            if (System.IO.File.Exists(oldImagePath))
+            {
+                System.IO.File.Delete(oldImagePath);
+            }
+            unitofwork.Product.Remove(product);
+            unitofwork.Save();
+            TempData["success"] = "Product Deleted Successfully";
+            return Json(new { success = true, message = "Delete Successful" });
+        }
+        #endregion
     }
 }
