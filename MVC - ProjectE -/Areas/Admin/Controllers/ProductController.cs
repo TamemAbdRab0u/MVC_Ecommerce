@@ -25,13 +25,6 @@ namespace MVC___ProjectE__.Areas.Admin.Controllers
         }
 
         [HttpGet]
-        public IActionResult Details(int Id)
-        {
-            Product product = unitofwork.Product.Get(x => x.Id == Id);
-            return View(product);
-        }
-
-        [HttpGet]
         public IActionResult Upsert(int? Id)
         {
             ProductVM productVM = new()
