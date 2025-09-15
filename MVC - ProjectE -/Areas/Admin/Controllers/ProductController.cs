@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Bulky.Models;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Bulky.Models.ViewModels;
 
 namespace MVC___ProjectE__.Areas.Admin.Controllers
 {
@@ -32,26 +33,36 @@ namespace MVC___ProjectE__.Areas.Admin.Controllers
         [HttpGet]
         public IActionResult Create()
         {
-            IEnumerable<SelectListItem> CategoreyList = unitofwork.Category.GetAll().Select(x => new SelectListItem
+            ProductVM productVM = new()
             {
-                Text = x.Name,
-                Value = x.Id.ToString()
-            });
-            ViewBag.CategoreyList = CategoreyList;
+                CategoryList = unitofwork.Category.GetAll().Select(x => new SelectListItem
+                {
+                    Text = x.Name,
+                    Value = x.Id.ToString()
+                }),
+                Product = new Product()
+            };
 
-            return View();
+            return View(productVM);
         }
         [HttpPost]
-        public IActionResult Create(Product product)
+        public IActionResult Create(ProductVM obj)
         {
             if (ModelState.IsValid)
             {
-                unitofwork.Product.Add(product);
+                unitofwork.Product.Add(obj.Product);
                 unitofwork.Save();
                 TempData["success"] = "Product Added Successfully";
                 return RedirectToAction("Index");
             }
-            return View("Create", product);
+
+            obj.CategoryList = unitofwork.Category.GetAll().Select(x => new SelectListItem
+            {
+                Text = x.Name,
+                Value = x.Id.ToString()
+            });
+            return View(obj);
+
         }
 
 
