@@ -14,54 +14,29 @@
 			<div class="col-6">
 			</div>
 			<div class="col-6 text-end">
-				<a asp-controller="Product" asp-action="Create" class="btn btn-primary">
+				<a asp-controller="Product" asp-action="Upsert" class="btn btn-primary">
 					<i class="bi bi-plus-circle"></i> Create New Product
 				</a>
 			</div>
 		</div>
 
-		<table class="table table-bordered table-striped">
+		<table id="tbldata" class="table table-bordered table-striped">
 			<thead>
 				<tr>
 					<th>Title</th>
-					<th>Description</th>
 					<th>ISBN</th>
 					<th>Author</th>
-					<th>ListPrice</th>
 					<th>Price</th>
-					<th>Price50</th>
-					<th>Price100</th>
-					<th>Edit</th>
-					<th>Delete</th>
+					<th>Category</th>
+					<th>Action</th>
 				</tr>
 			</thead>
 
-			<tbody>
-				@foreach (var item in Model)
-				{
-					<tr>
-						<td>@item.Title</td>
-						<td>@item.Description</td>
-						<td>@item.ISBN</td>
-						<td>@item.Author</td>
-						<td>@item.ListPrice</td>
-						<td>@item.Price</td>
-						<td>@item.Price50</td>
-						<td>@item.Price100</td>
-						<td style="width:155px;">
-							<a asp-controller="Product" asp-action="Edit" asp-route-Id="@item.Id" class="btn btn-primary rounded-1">
-								<i class="bi bi-pencil-square"></i> Edit
-							</a>
-						</td>
-						<td style="width:175px;">
-							<a asp-controller="Product" asp-action="Delete" asp-route-Id="@item.Id" class="btn btn-danger rounded-1">
-								<i class="bi bi-trash"></i> Delete
-							</a>
-						</td>
-					</tr>
-				}
-			</tbody>
+			
 		</table>
 	</div>
 </div>
 
+@section Scripts{
+	<script src="/js/Product.js"></script>
+}
