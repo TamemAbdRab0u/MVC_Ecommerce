@@ -10,15 +10,17 @@ namespace MVC___ProjectE__.Areas.Admin.Controllers
     public class ProductController : Controller
     {
         private readonly IUnitOfWork unitofwork;
-        public ProductController(IUnitOfWork unitofwork)
+        private readonly IWebHostEnvironment hostEnvironment;
+        public ProductController(IUnitOfWork unitofwork, IWebHostEnvironment hostEnvironment)
         {
             this.unitofwork = unitofwork;
+            this.hostEnvironment = hostEnvironment;
         }
 
         [HttpGet]
         public IActionResult Index()
         {
-            List<Product> products = unitofwork.Product.GetAll().ToList();  
+            List<Product> products = unitofwork.Product.GetAll(includeProperties: "Category").ToList();  
             return View(products);
         }
 
@@ -58,9 +60,40 @@ namespace MVC___ProjectE__.Areas.Admin.Controllers
         {
             if (ModelState.IsValid)
             {
-                unitofwork.Product.Add(productVM.Product);
+                string wwwRootPath = hostEnvironment.WebRootPath;
+                if(file != null)
+                {
+                    string FileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
+                    string ProductPath = Path.Combine(wwwRootPath, @"images\products");
+
+                    if (!string.IsNullOrEmpty(productVM.Product.ImageUrl))
+                    {
+                        // Delete the old image
+                        var oldImagePath = Path.Combine(wwwRootPath, productVM.Product.ImageUrl.TrimStart('\\'));
+
+                        if (System.IO.File.Exists(oldImagePath))
+                        {
+                            System.IO.File.Delete(oldImagePath);
+                        }
+                    }
+
+                    using (var fileStream = new FileStream(Path.Combine(ProductPath, FileName), FileMode.Create))
+                    {
+                        file.CopyTo(fileStream);
+                    }
+                    productVM.Product.ImageUrl = @"\images\products\" + FileName;
+                }
+
+                if(productVM.Product.Id == 0)
+                {
+                    unitofwork.Product.Add(productVM.Product);
+                }
+                else
+                {
+                    unitofwork.Product.Update(productVM.Product);
+                }
                 unitofwork.Save();
-                TempData["success"] = "Product Added Successfully";
+                TempData["success"] = productVM.Product.Id == 0?"Product Added Successfully" : "Product Updated Successfully";
                 return RedirectToAction("Index");
             }
 
@@ -73,81 +106,6 @@ namespace MVC___ProjectE__.Areas.Admin.Controllers
 
         }
 
-
-        [HttpGet]
-        public IActionResult Create()
-        {
-            ProductVM productVM = new()
-            {
-                CategoryList = unitofwork.Category.GetAll().Select(x => new SelectListItem
-                {
-                    Text = x.Name,
-                    Value = x.Id.ToString()
-                }),
-                Product = new Product()
-            };
-
-            return View(productVM);
-        }
-        [HttpPost]
-        public IActionResult Create(ProductVM obj)
-        {
-            if (ModelState.IsValid)
-            {
-                unitofwork.Product.Add(obj.Product);
-                unitofwork.Save();
-                TempData["success"] = "Product Added Successfully";
-                return RedirectToAction("Index");
-            }
-
-            obj.CategoryList = unitofwork.Category.GetAll().Select(x => new SelectListItem
-            {
-                Text = x.Name,
-                Value = x.Id.ToString()
-            });
-            return View(obj);
-
-        }
-
-
-        [HttpGet]
-        public IActionResult Edit(int Id)
-        {
-            Product product = unitofwork.Product.Get(x => x.Id == Id);
-            return View(product);
-        }
-        [HttpPost]
-        public IActionResult Edit(Product product)
-        {
-            if (ModelState.IsValid)
-            {
-                unitofwork.Product.Update(product);
-                unitofwork.Save();
-                TempData["success"] = "Product Updated Successfully";
-                return RedirectToAction("Index");
-            }
-            return View("Edit", product);
-        }
-
-
-        [HttpGet]
-        public IActionResult Delete(int Id)
-        {
-            Product product = unitofwork.Product.Get(x => x.Id == Id);
-            return View(product);
-        }
-        [HttpPost]
-        public IActionResult ConfirmDelete(int Id)
-        {
-            Product product = unitofwork.Product.Get(x => x.Id == Id);
-            if (product != null)
-            {
-                unitofwork.Product.Remove(product);
-                unitofwork.Save();
-                TempData["success"] = "Product Deleted Successfully";
-                return RedirectToAction("Index");
-            }
-            return NotFound();
-        }
+        
     }
 }
