@@ -1,7 +1,8 @@
-using Microsoft.EntityFrameworkCore;
+    using Microsoft.EntityFrameworkCore;
 using Bulky.DataAccess.Data;
 using Bulky.DataAccess.Repository.IRepository;
 using Bulky.DataAccess.Repository.Repository;
+using Microsoft.AspNetCore.Identity;
 
 namespace MVC___ProjectE__
 {
@@ -17,6 +18,8 @@ namespace MVC___ProjectE__
             {
                 options.UseSqlServer(builder.Configuration.GetConnectionString("constr"));
             });
+
+            builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true).AddEntityFrameworkStores<AppDbContext>();
 
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
