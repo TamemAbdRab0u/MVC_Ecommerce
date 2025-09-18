@@ -19,7 +19,8 @@ namespace MVC___ProjectE__
                 options.UseSqlServer(builder.Configuration.GetConnectionString("constr"));
             });
 
-            builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true).AddEntityFrameworkStores<AppDbContext>();
+            builder.Services.AddDefaultIdentity<IdentityUser>().AddEntityFrameworkStores<AppDbContext>();
+            builder.Services.AddRazorPages();
 
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
@@ -39,7 +40,9 @@ namespace MVC___ProjectE__
 
             app.UseRouting();
 
+            app.UseAuthentication();
             app.UseAuthorization();
+            app.MapRazorPages();
 
             app.MapControllerRoute(
                 name: "default",
