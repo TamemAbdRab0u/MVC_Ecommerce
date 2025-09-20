@@ -13,11 +13,13 @@ namespace Bulky.DataAccess.Repository.Repository
         private readonly AppDbContext context;
         public ICategoryRepo Category { get; private set; }
         public IProductRepo Product { get; private set; }
+        public ICompanyRepo Company { get; private set; }
         public UnitOfWork(AppDbContext context)
         {
             this.context = context;
             Category = new CategoryRepo(context);
             Product = new ProductRepo(context);
+            Company = new CompanyRepo(context);
         }
 
         public void Save()
