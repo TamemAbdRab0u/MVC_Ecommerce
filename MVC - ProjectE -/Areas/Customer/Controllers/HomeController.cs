@@ -6,6 +6,7 @@ using Bulky.Models;
 using Bulky.DataAccess.Repository.IRepository;
 using System.Diagnostics;
 using Bulky.DataAccess.Repository.Repository;
+using System.Security.Claims;
 
 namespace MVC___ProjectE__.Areas.Customer.Controllers
 {
@@ -31,14 +32,44 @@ namespace MVC___ProjectE__.Areas.Customer.Controllers
         [HttpGet]
         public IActionResult Details(int id)
         {
-            Product product = unitofwork.Product.Get(x => x.Id == id, includeProperties: "Category");
-            return View(product);
+            ShoppingCart cart = new()
+            {
+                Product = unitofwork.Product.Get(x => x.Id == id, includeProperties: "Category"),
+                Count = 1,
+                ProductId = id,
+            };
+            return View(cart);
         }
 
-        public IActionResult Privacy()
+        [HttpPost]
+        public IActionResult Details(ShoppingCart Cart)
         {
-            return View();
+            var ClaimsIdentity = (ClaimsIdentity)User.Identity;
+            var UserId = ClaimsIdentity.FindFirst(ClaimTypes.NameIdentifier).Value;
+            Cart.ApplicationUserId = UserId;
+            Cart.Id = 0;
+
+            var CartFromDb = unitofwork.ShoppingCart.Get(x => x.ApplicationUserId == UserId && x.ProductId == Cart.ProductId);
+            if (CartFromDb != null)          // Cart Exist
+            {
+                CartFromDb.Count += Cart.Count;
+                unitofwork.ShoppingCart.Update(CartFromDb);
+            }
+            else
+            {
+                unitofwork.ShoppingCart.Add(Cart);
+            }
+
+            unitofwork.Save();
+            return RedirectToAction(nameof(Index));
         }
+
+
+
+        public IActionResult Privacy()
+                {
+                    return View();
+                }
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
