@@ -59,7 +59,7 @@ namespace MVC___ProjectE__.Areas.Customer.Controllers
             {
                 unitofwork.ShoppingCart.Add(Cart);
             }
-
+            TempData["success"] = "Cart Updated Successfully";
             unitofwork.Save();
             return RedirectToAction(nameof(Index));
         }
