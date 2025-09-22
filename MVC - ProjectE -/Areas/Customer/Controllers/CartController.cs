@@ -39,7 +39,31 @@ namespace MVC___ProjectE__.Areas.Customer.Controllers
 
         public IActionResult Summary()
         {
-            return View();
+            var ClaimsIdentity = (ClaimsIdentity)User.Identity;
+            var UserId = ClaimsIdentity.FindFirst(ClaimTypes.NameIdentifier).Value;
+
+            CartVM = new()
+            {
+                Carts = unitOfWork.ShoppingCart.GetAll(x => x.ApplicationUserId == UserId, includeProperties: "Product"),
+                OrderHeader = new()
+            };
+
+            CartVM.OrderHeader.ApplicationUser = unitOfWork.ApplicationUser.Get(x => x.Id == UserId);
+
+            CartVM.OrderHeader.Name = CartVM.OrderHeader.ApplicationUser.Name;
+            CartVM.OrderHeader.PhoneNumber = CartVM.OrderHeader.ApplicationUser.PhoneNumber;
+            CartVM.OrderHeader.StreetAddress = CartVM.OrderHeader.ApplicationUser.StreetAddress;
+            CartVM.OrderHeader.City = CartVM.OrderHeader.ApplicationUser.City;
+            CartVM.OrderHeader.State = CartVM.OrderHeader.ApplicationUser.State;
+            CartVM.OrderHeader.PostalCode = CartVM.OrderHeader.ApplicationUser.PostalCode;
+
+            foreach (var cart in CartVM.Carts)
+            {
+                cart.Price = GetPriceBasedOnQuantity(cart);
+                CartVM.OrderHeader.OrderTotal += (cart.Price * cart.Count);
+            }
+
+            return View(CartVM);
         }
         public IActionResult Plus(int Id)
         {
