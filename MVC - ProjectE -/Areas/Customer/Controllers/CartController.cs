@@ -1,6 +1,7 @@
 ﻿using Bulky.DataAccess.Repository.IRepository;
 using Bulky.Models;
 using Bulky.Models.ViewModels;
+using Bulky.Utility;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Drawing.Text;
@@ -13,6 +14,7 @@ namespace MVC___ProjectE__.Areas.Customer.Controllers
     public class CartController : Controller
     {
         private readonly IUnitOfWork unitOfWork;
+        [BindProperty]
         public CartVM CartVM { get; set; }
         public CartController(IUnitOfWork unitOfWork)
         {
@@ -65,6 +67,66 @@ namespace MVC___ProjectE__.Areas.Customer.Controllers
 
             return View(CartVM);
         }
+
+        [HttpPost]
+        [ActionName("Summary")]
+        public IActionResult SummaryPost()
+        {
+            var ClaimsIdentity = (ClaimsIdentity)User.Identity;
+            var UserId = ClaimsIdentity.FindFirst(ClaimTypes.NameIdentifier).Value;
+
+            CartVM.Carts = unitOfWork.ShoppingCart.GetAll(x => x.ApplicationUserId == UserId, includeProperties: "Product");
+
+            CartVM.OrderHeader.OrderDate = System.DateTime.Now;
+            CartVM.OrderHeader.ApplicationUserId = UserId;
+
+            ApplicationUser applicationUser = unitOfWork.ApplicationUser.Get(x => x.Id == UserId);    
+
+            foreach (var cart in CartVM.Carts)
+            {
+                cart.Price = GetPriceBasedOnQuantity(cart);
+                CartVM.OrderHeader.OrderTotal += (cart.Price * cart.Count);
+            }
+
+            if(applicationUser.CompanyId.GetValueOrDefault() == 0)
+            {
+                CartVM.OrderHeader.PaymentStatus = SD.PaymentStatusPending;
+                CartVM.OrderHeader.OrderStatus = SD.StatusPending;
+            }
+            else
+            {
+                CartVM.OrderHeader.PaymentStatus = SD.PaymentStatusDelayedPayment;
+                CartVM.OrderHeader.OrderStatus = SD.StatusApproved;
+            }
+
+            unitOfWork.OrderHeader.Add(CartVM.OrderHeader);
+            unitOfWork.Save();
+            foreach(var cart in CartVM.Carts)
+            {
+                OrderDetail orderDetail = new()
+                {
+                    ProductId = cart.ProductId,
+                    OrderHeaderId = CartVM.OrderHeader.Id,
+                    Price = cart.Price,
+                    Count = cart.Count
+                };
+                unitOfWork.OrderDetail.Add(orderDetail);
+                unitOfWork.Save();
+            }
+
+            if (applicationUser.CompanyId.GetValueOrDefault() == 0)
+            {
+                
+            }
+
+            return RedirectToAction(nameof(OrderConfirmation), new {id = CartVM.OrderHeader.Id });
+        }
+
+        public IActionResult OrderConfirmation(int id)
+        {
+            return View(id);
+        }
+
         public IActionResult Plus(int Id)
         {
             ShoppingCart cart = unitOfWork.ShoppingCart.Get(x => x.Id == Id);
