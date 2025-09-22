@@ -27,12 +27,12 @@ namespace MVC___ProjectE__.Areas.Customer.Controllers
             CartVM = new()
             {
                 Carts = unitOfWork.ShoppingCart.GetAll(x => x.ApplicationUserId == UserId, includeProperties: "Product"),
-                //OrderTotal = 0
+                OrderHeader = new()
             };
             foreach(var cart in CartVM.Carts)
             {
                 cart.Price = GetPriceBasedOnQuantity(cart);
-                CartVM.OrderTotal += (cart.Price * cart.Count);
+                CartVM.OrderHeader.OrderTotal += (cart.Price * cart.Count);
             }
             return View(CartVM);
         }
