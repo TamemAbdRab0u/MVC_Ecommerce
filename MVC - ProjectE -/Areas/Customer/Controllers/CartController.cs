@@ -1,10 +1,14 @@
 ﻿using Bulky.DataAccess.Repository.IRepository;
+using Bulky.DataAccess.Repository.Repository;
 using Bulky.Models;
 using Bulky.Models.ViewModels;
+using Bulky.Utility;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Stripe.Checkout;
 using System.Drawing.Text;
 using System.Security.Claims;
+using static System.Net.WebRequestMethods;
 
 namespace MVC___ProjectE__.Areas.Customer.Controllers
 {
@@ -13,6 +17,7 @@ namespace MVC___ProjectE__.Areas.Customer.Controllers
     public class CartController : Controller
     {
         private readonly IUnitOfWork unitOfWork;
+        [BindProperty]
         public CartVM CartVM { get; set; }
         public CartController(IUnitOfWork unitOfWork)
         {
@@ -27,20 +32,157 @@ namespace MVC___ProjectE__.Areas.Customer.Controllers
             CartVM = new()
             {
                 Carts = unitOfWork.ShoppingCart.GetAll(x => x.ApplicationUserId == UserId, includeProperties: "Product"),
-                //OrderTotal = 0
+                OrderHeader = new()
             };
             foreach(var cart in CartVM.Carts)
             {
                 cart.Price = GetPriceBasedOnQuantity(cart);
-                CartVM.OrderTotal += (cart.Price * cart.Count);
+                CartVM.OrderHeader.OrderTotal += (cart.Price * cart.Count);
             }
             return View(CartVM);
         }
 
         public IActionResult Summary()
         {
-            return View();
+            var ClaimsIdentity = (ClaimsIdentity)User.Identity;
+            var UserId = ClaimsIdentity.FindFirst(ClaimTypes.NameIdentifier).Value;
+
+            CartVM = new()
+            {
+                Carts = unitOfWork.ShoppingCart.GetAll(x => x.ApplicationUserId == UserId, includeProperties: "Product"),
+                OrderHeader = new()
+            };
+
+            CartVM.OrderHeader.ApplicationUser = unitOfWork.ApplicationUser.Get(x => x.Id == UserId);
+
+            CartVM.OrderHeader.Name = CartVM.OrderHeader.ApplicationUser.Name;
+            CartVM.OrderHeader.PhoneNumber = CartVM.OrderHeader.ApplicationUser.PhoneNumber;
+            CartVM.OrderHeader.StreetAddress = CartVM.OrderHeader.ApplicationUser.StreetAddress;
+            CartVM.OrderHeader.City = CartVM.OrderHeader.ApplicationUser.City;
+            CartVM.OrderHeader.State = CartVM.OrderHeader.ApplicationUser.State;
+            CartVM.OrderHeader.PostalCode = CartVM.OrderHeader.ApplicationUser.PostalCode;
+
+            foreach (var cart in CartVM.Carts)
+            {
+                cart.Price = GetPriceBasedOnQuantity(cart);
+                CartVM.OrderHeader.OrderTotal += (cart.Price * cart.Count);
+            }
+
+            return View(CartVM);
         }
+
+        [HttpPost]
+        [ActionName("Summary")]
+        public IActionResult SummaryPost()
+        {
+            var ClaimsIdentity = (ClaimsIdentity)User.Identity;
+            var UserId = ClaimsIdentity.FindFirst(ClaimTypes.NameIdentifier).Value;
+
+            CartVM.Carts = unitOfWork.ShoppingCart.GetAll(x => x.ApplicationUserId == UserId, includeProperties: "Product");
+
+            CartVM.OrderHeader.OrderDate = System.DateTime.Now;
+            CartVM.OrderHeader.ApplicationUserId = UserId;
+
+            ApplicationUser applicationUser = unitOfWork.ApplicationUser.Get(x => x.Id == UserId);    
+
+            foreach (var cart in CartVM.Carts)
+            {
+                cart.Price = GetPriceBasedOnQuantity(cart);
+                CartVM.OrderHeader.OrderTotal += (cart.Price * cart.Count);
+            }
+
+            if(applicationUser.CompanyId.GetValueOrDefault() == 0)
+            {
+                CartVM.OrderHeader.PaymentStatus = SD.PaymentStatusPending;
+                CartVM.OrderHeader.OrderStatus = SD.StatusPending;
+            }
+            else
+            {
+                CartVM.OrderHeader.PaymentStatus = SD.PaymentStatusDelayedPayment;
+                CartVM.OrderHeader.OrderStatus = SD.StatusApproved;
+            }
+
+            unitOfWork.OrderHeader.Add(CartVM.OrderHeader);
+            unitOfWork.Save();
+            foreach(var cart in CartVM.Carts)
+            {
+                OrderDetail orderDetail = new()
+                {
+                    ProductId = cart.ProductId,
+                    OrderHeaderId = CartVM.OrderHeader.Id,
+                    Price = cart.Price,
+                    Count = cart.Count
+                };
+                unitOfWork.OrderDetail.Add(orderDetail);
+                unitOfWork.Save();
+            }
+
+            if (applicationUser.CompanyId.GetValueOrDefault() == 0)
+            {
+                var Domain = "https://localhost:7265/";
+                var options = new Stripe.Checkout.SessionCreateOptions
+                {
+                    SuccessUrl = Domain + $"Customer/Cart/OrderConfirmation?id={CartVM.OrderHeader.Id}",
+                    CancelUrl = Domain + $"Customer/Cart/Index",
+                    LineItems = new List<Stripe.Checkout.SessionLineItemOptions>(),
+                    Mode = "payment",
+                };
+
+                foreach (var item in CartVM.Carts)
+                {
+                    var sessionLineItem = new SessionLineItemOptions
+                    {
+                        PriceData = new SessionLineItemPriceDataOptions
+                        {
+                            UnitAmount = (long)(item.Price * 100),
+                            Currency = "usd",
+                            ProductData = new SessionLineItemPriceDataProductDataOptions
+                            {
+                                Name = item.Product.Title
+                            }
+                        },
+                        Quantity = item.Count
+                    };
+                    options.LineItems.Add(sessionLineItem);
+                }
+
+                var service = new SessionService();
+                Session session = service.Create(options);
+                unitOfWork.OrderHeader.UpdateStripePaymentID(CartVM.OrderHeader.Id, session.Id, session.PaymentIntentId);
+                unitOfWork.Save();
+                Response.Headers.Add("Location", session.Url);
+                return new StatusCodeResult(303);
+            }
+
+            return RedirectToAction(nameof(OrderConfirmation), new {id = CartVM.OrderHeader.Id });
+        }
+
+        public IActionResult OrderConfirmation(int id)
+        {
+            OrderHeader orderHeader = unitOfWork.OrderHeader.Get(u => u.Id == id, includeProperties: "ApplicationUser");
+            if (orderHeader.PaymentStatus != SD.PaymentStatusDelayedPayment)
+            {
+                //this is an order by customer
+                var service = new SessionService();
+                Session session = service.Get(orderHeader.SessionId);
+
+                if (session.PaymentStatus.ToLower() == "paid")
+                {
+                    unitOfWork.OrderHeader.UpdateStripePaymentID(id, session.Id, session.PaymentIntentId);
+                    unitOfWork.OrderHeader.UpdateStatus(id, SD.StatusApproved, SD.PaymentStatusApproved);
+                    unitOfWork.Save();
+                }
+            }
+
+            List<ShoppingCart> shoppingCarts = unitOfWork.ShoppingCart
+                .GetAll(u => u.ApplicationUserId == orderHeader.ApplicationUserId).ToList();
+
+            unitOfWork.ShoppingCart.RemoveRange(shoppingCarts);
+            unitOfWork.Save();
+
+            return View(id);
+        }
+
         public IActionResult Plus(int Id)
         {
             ShoppingCart cart = unitOfWork.ShoppingCart.Get(x => x.Id == Id);

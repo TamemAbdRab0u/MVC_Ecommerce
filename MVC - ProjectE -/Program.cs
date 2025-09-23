@@ -5,6 +5,7 @@ using Bulky.Utility;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
+using Stripe;
 
 namespace MVC___ProjectE__
 {
@@ -20,6 +21,8 @@ namespace MVC___ProjectE__
             {
                 options.UseSqlServer(builder.Configuration.GetConnectionString("constr"));
             });
+
+            builder.Services.Configure<StripeSetting>(builder.Configuration.GetSection("Stripe"));
 
             builder.Services.AddIdentity<IdentityUser,IdentityRole>().AddEntityFrameworkStores<AppDbContext>().AddDefaultTokenProviders();
 
@@ -48,7 +51,7 @@ namespace MVC___ProjectE__
 
             app.UseHttpsRedirection();
             app.UseStaticFiles();
-
+            StripeConfiguration.ApiKey = builder.Configuration.GetSection("Stripe:SecretKey").Get<string>();
             app.UseRouting();
 
             app.UseAuthentication();
